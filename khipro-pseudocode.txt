@@ -1,6 +1,10 @@
-(title "ক্ষিপ্র")
-(map
-	(shor
+"""
+	This is a pseudocode of khipro IME for Bengali.
+	It has two core parts: 1. List of mapping dictionaries, 2. A state machine which functions like the main function.
+"""
+
+MAPPING DICTIONARIES: {
+	{shor
 		("o" "অ")
 		("a" "আ")
 		("i" "ই")
@@ -20,8 +24,8 @@
 		
 		("off" "ঽ")
 		
-	)
-	(fkar
+	}
+	{fkar
 		("uff" "‌ু")
 		("uuff" "‌ূ")
 		("qff" "‌ৃ") 
@@ -40,8 +44,13 @@
 		("waf" "োয়া")
 		("wef" "োয়ে")
 		("oo" "ঃ") 
-	)
-	(byanjon
+	}
+	"""
+		The next dictionary named 'byanjon' has a special property. Whenever a item is pulled from this dictionary it assigns a value to a variable.
+		The syntax used here is: `set CID 1`. Which means "assign value 1 to variable CID". Some items of the dictionary can have more that one `set` actions.
+		Dictionaries other than "byanjon" can also have such `set` actions.
+	"""
+	{byanjon
 		("k" (set CID 1) "ক")
 		("kh" (set CID 2) "খ")
 		("g" (set CID 3) "গ")
@@ -79,15 +88,21 @@
 		("rf" (set CID 34) "ড়")
 		("rff" (set CID 35) "ঢ়")
 		(",," (set CID 36) "়")
-		;; কিছু বিশেষ যুক্তবর্ণ যাদেরকে ব্যঞ্জনবর্ণের মর্যাদা দেওয়া হলো
+		
 		("kf" (set CID 39) (set SLICER 1) "ক্ষ")
 		("rr" (set CID 187) "‍রর")		
-	)
-	(phola
+	}
+	"""
+		The following dictionary also has variable value assigning.
+	"""
+	{phola
 		("r" (set CID 27) "র")
 		("z" (set CID 26) "য")
-	)
-	(kar
+	}
+	"""
+		The following dictionary also has variable value assigning for some instances.
+	"""
+	{kar
 		("o" "")
 		("of" "অ")
 		("off" "ঽ")
@@ -125,8 +140,8 @@
 
 		("oo" "ঃ") 
 
-	)
-	(ongko
+	}
+	{ongko
 		(".1" ".১")
 		(".2" ".২")
 		(".3" ".৩")
@@ -147,8 +162,8 @@
 		("8" "৮")
 		("9" "৯")
 		("0" "০")
-	)
-	(diacritic
+	}
+	{diacritic
 		("qq" "্")
 		("xx" "্‌")
 		("x" "ং")		
@@ -156,11 +171,8 @@
 		("``" "‌")
 		("```" "``")
 		("``f" "‍")
-
-
-
-	)
-	(biram
+	}
+	{biram
 		("." "।")
 		("..." "...")
 		(".." ".")
@@ -176,501 +188,546 @@
 		("$$" "$")
 		("=" "=")
 		("=f" "≠")
-	)
-	(prithayok
+	}
+	{prithayok
 		(";" ";")
-	)
-	(slicer
+	}
+	{slicer
 		("/" "/")
-	)
-	(slicer2
+	}
+	{slicer2
 		("//" "/")
-	)
-	(slicer3
+	}
+	{slicer3
 		("///" "//")
-	)
-	(backspace
-		( (BackSpace)  (undo) )
-	)
-)
-
-(state
-	(init
-		(t (set P2CID 0) (set ALTERNATE 0) (set PCID 0) (set CID 0) (set SLICER 0) (set KAR 0))
-		(diacritic (commit)  (shift shor-state))
-		(slicer (commit))
-		(slicer3 (commit))
-		(slicer2 (delete @-) (insert "ঁ") (shift shor-state))
-		(shor (shift shor-state))
-		(fkar (commit)  (shift shor-state))
-		(prithayok (commit) )
-		(ongko )
-		(biram )
-		(byanjon (set PCID CID) (shift byanjon-state))
-		;; VARIABLE PCID অর্থ: কোনো ব্যঞ্জন লেখামাত্র সেটার ID -কে PCID তে সেভ করা হয় (P অর্থ previous ধরতে পারি)। P2CID হচ্ছে তার পরের ব্যঞ্জনের ID. 
-		;; কোনো যুক্তবর্ণ গঠিত হলে সেই যুক্তব‍র্ণের আলাদা CID সেট করা হবে। সেটাকে সাথে সাথে PCID তে পাসও করে দেওয়া হবে। এতে পরব‍র্তী ব্যঞ্জন এই যুক্তবর্ণের সাথে যুক্ত হবে কিনা সিদ্ধান্ত নেওয়া যাবে।
-
-	)
-	(shor-state
-		(t (set P2CID 0) (set ALTERNATE 0) (set PCID 0) (set CID 0) (set SLICER 0))
-		(diacritic  )
-		(slicer (delete @-) (insert "ঁ"))
-		(slicer2 (shift init))
-		(slicer3 (shift init))
-		(shor )
-		(fkar )
-		(biram (shift init))
-		(prithayok (delete @-)  (shift init) )
-		(ongko (shift init))
-		(byanjon (set PCID CID) (shift byanjon-state))
-		(backspace)
-	)
-	(byanjon-state
-
-		(prithayok (delete @-)  (shift init))
-		(ongko  (shift init))
-		(biram  (shift init))
-		(kar 
-			(cond
-				( (& (| (= PCID 27) (= PCID 187)) (= KAR 1)) (move @-) (move @-) (move @-) (insert "‍") (move @>) (set KAR 0) )  
-			)
-			(shift shor-state)
-		)
-
-		(phola
-			;; র দিয়ে শেষ হয় এমন যুক্তবর্ণকে ব্যঞ্জন হিসেবে অ্যাড করা যাবে না। নতুবা নিচের লজিক ফেইল করবে। সেক্ষেত্রে এখানে বাড়তি লজিক অ্যাড করতে হবে। উল্লেখ্য: যুক্তবর্ণ সেকশনেও ফলা লজিক আছে।
-			;; VARIABLE P2CID অর্থ: কোনো ব্যঞ্জন লেখামাত্র সেটার ID -কে PCID তে সেভ করা হয় (P অর্থ previous ধরতে পারি)। P2CID হচ্ছে তার পরের ব্যঞ্জনের ID. 
-			;; কোনো যুক্তবর্ণ গঠিত হলে সেই যুক্তব‍র্ণের আলাদা CID সেট করা হবে। সেটাকে সাথে সাথে PCID তে পাসও করে দেওয়া হবে। এতে পরব‍র্তী ব্যঞ্জন এই যুক্তবর্ণের সাথে যুক্ত হবে কিনা সিদ্ধান্ত নেওয়া যাবে।
-			(cond 
-				((& (= PCID 27) (= CID 26)) (delete @-) (delete @-) (set P2CID CID) (set CID 37) (insert "র‍্য") (set SLICER 2) (shift juktoborno-state))
-				((= PCID 187) (move @-) (delete @-) (insert ?্) (move @>) (set SLICER 1))
-				(1 (move @-) (insert ?্) (move @>) (set P2CID CID) (set SLICER 1) (shift juktoborno-state)) 
-			)
-			(set PCID CID) ;; ব্যঞ্জনের পরে ব্যঞ্জন লেখা হলে শেষ যত CID সেট করা হলো, হোক সেটা যুক্তবর্ণ কিংবা একক ব্যঞ্জন, সেটার CID -কে PCID তে পাঠিয়ে দেওয়া হলো। যাতে এর পরে আবার ব্যঞ্জন লেখা হলে সেটা এটার সাথে যুক্ত করা বা না করার সিদ্ধান্ত নেওয়া যায়।
-		)
-		(byanjon 
-			(cond
-				((= PCID 187)
-					(cond
-						((= CID 39) (move @-) (move @-) (move @-) (delete @-) (insert "্") (move @>) (set P2CID CID) (set SLICER 4))
-						((= CID 189) (delete @-2) (set P2CID CID) (set CID 34) (insert "ড়")) ;; ‍রর লেখার পরে ⁌ লিখলে ড় আসবে।
-						((= CID 187) (set P2CID CID)) ;; ‍রর এর পরে ‍রর লিখলে রেফ আসবে না। এতে বারবার র-ফলা আসার ইশু ফিক্স হবে।
-						(1 (move @-) (delete @-) (insert "্") (move @>) (set P2CID CID) (set SLICER 1))
-						;; এই সেকশন রেফের জন্য। যেকোনো যুক্তবর্ণের আগে যাতে রেফ দেওয়া যায় সেজন্য এখান থেকে juktoborno-state -এ শিফট করা হয়নি। পরব‍র্তী সবগুলোতে আমরা দেখব যে শিফট করা হয়েছে।
-					)
-				)
-				((= PCID 1) 
-					(cond
-						((= CID 1) (delete @-2) (set P2CID CID) (set CID 38) (insert "ক্ক") (set SLICER 1) (shift juktoborno-state))
-
-						((= CID 2) (delete @-2) (set P2CID CID) (set CID 39) (insert "ক্ষ") (set SLICER 3) (set ALTERNATE 1) (shift juktoborno-state))
-						((= CID 11) (delete @-2) (set P2CID CID) (set CID 40) (insert "ক্ট") (set SLICER 1) (shift juktoborno-state))
-						((= CID 16) (delete @-2) (set P2CID CID) (set CID 41) (insert "ক্ত") (set SLICER 1) (shift juktoborno-state))
-						((= CID 23) (delete @-2) (set P2CID CID) (set CID 42) (insert "ক্ব") (set SLICER 1) (shift juktoborno-state))
-						((= CID 25) (delete @-2) (set P2CID CID) (set CID 43) (insert "ক্ম") (set SLICER 1) (shift juktoborno-state))
-						((= CID 30) (delete @-2) (set P2CID CID) (set CID 39) (insert "ক্ষ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 28) (delete @-2) (set P2CID CID) (set CID 44) (insert "ক্ল") (set SLICER 1) (shift juktoborno-state))
-						((= CID 31) (delete @-2) (set P2CID CID) (set CID 45) (insert "ক্স") (set SLICER 1) (shift juktoborno-state))
-						((= CID 189) (delete @-2) (set P2CID CID) (set CID 39) (insert "ক্ষ"))
-					)
-				)
-				((= PCID 3) 
-					(cond
-						((= CID 3) (delete @-2) (set P2CID CID) (set CID 65) (insert "জ্ঞ") (set SLICER 3) (set ALTERNATE 2) (shift juktoborno-state))
-						((= CID 15) (delete @-2) (set P2CID CID) (set CID 46) (insert "গ্‌ণ") (set SLICER 2) (shift juktoborno-state))
-						((= CID 19) (delete @-2) (set P2CID CID) (set CID 47) (insert "গ্ধ") (set SLICER 1) (shift juktoborno-state))
-						;; ক্ষ -এর মত গ্ধ -কে ব্যঞ্জনবর্ণের মর্যাদা দেওয়ার প্রয়োজন নেই, কেননা -এর ম্যাপিং ব্যতিক্রম নয়।
-						((= CID 20) (delete @-2) (set P2CID CID) (set CID 48) (insert "গ্ন") (set SLICER 1) (shift juktoborno-state))
-						((= CID 23) (delete @-2) (set P2CID CID) (set CID 49) (insert "গ্‌ব") (set SLICER 2) (shift juktoborno-state))
-						;; গ + ব -এর গ্‌ব এই রূপটি বাঞ্ছিত আর গ্ব এই রূপটি বাঞ্ছিত না। গ্ব লিখতে gqqb লিখতে হবে।
-						((= CID 25) (delete @-2) (set P2CID CID) (set CID 50) (insert "গ্ম") (set SLICER 1) (shift juktoborno-state))
-						((= CID 28) (delete @-2) (set P2CID CID) (set CID 51) (insert "গ্ল") (set SLICER 1) (shift juktoborno-state))
-					)
-				)
-				((= PCID 4)
-					(cond
-						((= CID 20) (delete @-2) (set P2CID CID) (set CID 52) (insert "ঘ্ন") (set SLICER 1) (shift juktoborno-state))
-					)
-				)
-				((= PCID 5)
-					(cond
-						((= CID 1) (delete @-2) (set P2CID CID) (set CID 53) (insert "ঙ্ক") (set SLICER 1) (shift juktoborno-state))
-						((= CID 2) (delete @-2) (set P2CID CID) (set CID 54) (insert "ঙ্খ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 3) (delete @-2) (set P2CID CID) (set CID 55) (insert "ঙ্গ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 4) (delete @-2) (set P2CID CID) (set CID 56) (insert "ঙ্ঘ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 25) (delete @-2) (set P2CID CID) (set CID 57) (insert "ঙ্ম") (set SLICER 1) (shift juktoborno-state))
-						((= CID 39) (delete @-4) (set P2CID CID) (set CID 58) (insert "ঙ্ক্ষ") (set SLICER 4) (shift juktoborno-state))
-						;; এখানে চারবার ডিলিট করার কারণ হলো ঙক্ষ = ৪টা ক্যারেক্টার
-					)
-				)
-				((= PCID 6)
-					(cond
-						((= CID 6) (delete @-2) (set P2CID CID) (set CID 59) (insert "চ্চ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 7) (delete @-2) (set P2CID CID) (set CID 60) (insert "চ্ছ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 10) (delete @-2) (set P2CID CID) (set CID 61) (insert "চ্ঞ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 23) (delete @-2) (set P2CID CID) (set CID 62) (insert "চ্ব") (set SLICER 1) (shift juktoborno-state))
-					)
-				)
-				((= PCID 8)
-					(cond
-						((= CID 8) (delete @-2) (set P2CID CID) (set CID 63) (insert "জ্জ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 9) (delete @-2) (set P2CID CID) (set CID 64) (insert "জ্ঝ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 10) (delete @-2) (set P2CID CID) (set CID 65) (insert "জ্ঞ") (set SLICER 1) (shift juktoborno-state)) 
-						;; যাতে jnff এর পরে g লিখলে গ্‌গ না আসে তাই juktoborno-state এর byanjon ব্রাঞ্চে pcid 65 এর জন্য P2CID চেক করা হবে।
-						((= CID 23) (delete @-2) (set P2CID CID) (set CID 66) (insert "জ্ব") (set SLICER 1) (shift juktoborno-state))
-					)
-				)
-				((= PCID 10)
-					(cond
-						((= CID 6) (delete @-2) (set P2CID CID) (set CID 67) (insert "ঞ্চ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 7) (delete @-2) (set P2CID CID) (set CID 68) (insert "ঞ্ছ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 8) (delete @-2) (set P2CID CID) (set CID 69) (insert "ঞ্জ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 9) (delete @-2) (set P2CID CID) (set CID 70) (insert "ঞ্ঝ") (set SLICER 1) (shift juktoborno-state))
-					)
-				)
-				((= PCID 11)
-					(cond
-						((= CID 11) (delete @-2) (set P2CID CID) (set CID 71) (insert "ট্ট") (set SLICER 1) (shift juktoborno-state))
-						((= CID 23) (delete @-2) (set P2CID CID) (set CID 72) (insert "ট্ব") (set SLICER 1) (shift juktoborno-state))
-						((= CID 25) (delete @-2) (set P2CID CID) (set CID 73) (insert "ট্ম") (set SLICER 1) (shift juktoborno-state))
-						((= CID 189) (delete @-2) (set P2CID CID) (set CID 12) (insert "ঠ"))
-					)
-				)
-				((= PCID 13)
-					(cond
-						((= CID 13) (delete @-2) (set P2CID CID) (set CID 74) (insert "ড্ড") (set SLICER 1) (shift juktoborno-state))
-						((= CID 23) (delete @-2) (set P2CID CID) (set CID 75) (insert "ড্ব") (set SLICER 1) (shift juktoborno-state))
-						((= CID 189) (delete @-2) (set P2CID CID) (set CID 14) (insert "ঢ"))
-					)
-				)
-				;; লক্ষ্যণীয়, আমরা য-ফলা ও র-ফলা যুক্তবর্ণ গুলো এড়িয়ে যাচ্ছি।
-				((= PCID 15)
-					(cond
-						((= CID 11) (delete @-2) (set P2CID CID) (set CID 77) (insert "ণ্ট") (set SLICER 1) (shift juktoborno-state))
-						((= CID 12) (delete @-2) (set P2CID CID) (set CID 78) (insert "ণ্ঠ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 13) (delete @-2) (set P2CID CID) (set CID 79) (insert "ণ্ড") (set SLICER 1) (shift juktoborno-state))
-						((= CID 14) (delete @-2) (set P2CID CID) (set CID 80) (insert "ণ্ঢ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 15) (delete @-2) (set P2CID CID) (set CID 81) (insert "ণ্ণ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 20) (delete @-2) (set P2CID CID) (set CID 81) (insert "ণ্ণ") (set SLICER 3) (set ALTERNATE 3) (shift juktoborno-state))
-						((= CID 23) (delete @-2) (set P2CID CID) (set CID 82) (insert "ণ্ব") (set SLICER 1) (shift juktoborno-state))
-						((= CID 25) (delete @-2) (set P2CID CID) (set CID 83) (insert "ণ্ম") (set SLICER 1) (shift juktoborno-state))
-						((= CID 189) (delete @-2) (set P2CID CID) (set CID 10) (insert "ঞ"))
-					)
-				)
-				((= PCID 16)
-					(cond
-						((= CID 11) (delete @-2) (set P2CID CID) (set CID 71) (insert "ট্ট") (set SLICER 3) (set ALTERNATE 4) (shift juktoborno-state)) ;; এটা ত এর যুক্তবর্ণ না হলেও এটা এখানে থাকবে
-						((= CID 16) (delete @-2) (set P2CID CID) (set CID 84) (insert "ত্ত") (set SLICER 1) (shift juktoborno-state))
-						((= CID 17) (delete @-2) (set P2CID CID) (set CID 85) (insert "ত্থ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 20) (delete @-2) (set P2CID CID) (set CID 86) (insert "ত্ন") (set SLICER 1) (shift juktoborno-state))
-						((= CID 23) (delete @-2) (set P2CID CID) (set CID 87) (insert "ত্ব") (set SLICER 1) (shift juktoborno-state))
-						((= CID 25) (delete @-2) (set P2CID CID) (set CID 88) (insert "ত্ম") (set SLICER 1) (shift juktoborno-state))
-						((= CID 189) (delete @-2) (set P2CID CID) (set CID 11) (insert "ট"))
-					)
-				)
-				((= PCID 17)
-					(cond
-						((= CID 23) (delete @-2) (set P2CID CID) (set CID 89) (insert "থ্ব") (set SLICER 1) (shift juktoborno-state))
-					)
-				)
-				((= PCID 18)
-					(cond
-						((= CID 3) (delete @-2) (set P2CID CID) (set CID 90) (insert "দ্‌গ") (set SLICER 2) (shift juktoborno-state))
-						((= CID 4) (delete @-2) (set P2CID CID) (set CID 91) (insert "দ্‌ঘ") (set SLICER 2) (shift juktoborno-state))
-						((= CID 13) (delete @-2) (set P2CID CID) (set CID 74) (insert "ড্ড") (set SLICER 3) (set ALTERNATE 5) (shift juktoborno-state)) ;; এটা দ এর যুক্তবর্ণ না হলেও এটা এখানে থাকবে
-						((= CID 18) (delete @-2) (set P2CID CID) (set CID 92) (insert "দ্দ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 19) (delete @-2) (set P2CID CID) (set CID 93) (insert "দ্ধ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 23) (delete @-2) (set P2CID CID) (set CID 94) (insert "দ্ব") (set SLICER 1) (shift juktoborno-state))
-						((= CID 24) (delete @-2) (set P2CID CID) (set CID 95) (insert "দ্ভ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 25) (delete @-2) (set P2CID CID) (set CID 96) (insert "দ্ম") (set SLICER 1) (shift juktoborno-state))
-						((= CID 189) (delete @-2) (set P2CID CID) (set CID 13) (insert "ড"))
-					)
-				)
-				((= PCID 19)
-					(cond
-						((= CID 20) (delete @-2) (set P2CID CID) (set CID 97) (insert "ধ্ন") (set SLICER 1) (shift juktoborno-state))
-						((= CID 23) (delete @-2) (set P2CID CID) (set CID 98) (insert "ধ্ব") (set SLICER 1) (shift juktoborno-state))
-						((= CID 25) (delete @-2) (set P2CID CID) (set CID 99) (insert "ধ্ম") (set SLICER 1) (shift juktoborno-state))
-					)
-				)
-				((= PCID 20)
-					(cond
-						((= CID 6) (delete @-2) (set P2CID CID) (set CID 67) (insert "ঞ্চ") (set SLICER 3) (set ALTERNATE 6) (shift juktoborno-state))
-						((= CID 7) (delete @-2) (set P2CID CID) (set CID 68) (insert "ঞ্ছ") (set SLICER 3) (set ALTERNATE 7) (shift juktoborno-state))
-						((= CID 8) (delete @-2) (set P2CID CID) (set CID 69) (insert "ঞ্জ") (set SLICER 3) (set ALTERNATE 8) (shift juktoborno-state))
-						((= CID 9) (delete @-2) (set P2CID CID) (set CID 70) (insert "ঞ্ঝ") (set SLICER 3) (set ALTERNATE 9) (shift juktoborno-state))
-						((= CID 11) (delete @-2) (set P2CID CID) (set CID 100) (insert "ন্ট") (set SLICER 1) (shift juktoborno-state))
-						((= CID 12) (delete @-2) (set P2CID CID) (set CID 101) (insert "ন্ঠ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 13) (delete @-2) (set P2CID CID) (set CID 102) (insert "ন্ড") (set SLICER 1) (shift juktoborno-state))
-
-						((= CID 15) (delete @-2) (set P2CID CID) (set CID 81) (insert "ণ্ণ") (set SLICER 3) (set ALTERNATE 10) (shift juktoborno-state))
-						((= CID 16) (delete @-2) (set P2CID CID) (set CID 103) (insert "ন্ত") (set SLICER 1) (shift juktoborno-state))
-						((= CID 17) (delete @-2) (set P2CID CID) (set CID 104) (insert "ন্থ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 18) (delete @-2) (set P2CID CID) (set CID 105) (insert "ন্দ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 19) (delete @-2) (set P2CID CID) (set CID 106) (insert "ন্ধ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 20) (delete @-2) (set P2CID CID) (set CID 107) (insert "ন্ন") (set SLICER 1) (shift juktoborno-state))
-						((= CID 23) (delete @-2) (set P2CID CID) (set CID 108) (insert "ন্ব") (set SLICER 1) (shift juktoborno-state))
-						((= CID 25) (delete @-2) (set P2CID CID) (set CID 109) (insert "ন্ম") (set SLICER 1) (shift juktoborno-state))
-						((= CID 31) (delete @-2) (set P2CID CID) (set CID 110) (insert "ন্স") (set SLICER 1) (shift juktoborno-state))
-						((= CID 189) (delete @-2) (set P2CID CID) (set CID 15) (insert "ণ"))
-					)
-				)
-				((= PCID 21)
-					(cond
-						((= CID 11) (delete @-2) (set P2CID CID) (set CID 111) (insert "প্ট") (set SLICER 1) (shift juktoborno-state))
-						((= CID 16) (delete @-2) (set P2CID CID) (set CID 112) (insert "প্ত") (set SLICER 1) (shift juktoborno-state))
-						((= CID 20) (delete @-2) (set P2CID CID) (set CID 113) (insert "প্ন") (set SLICER 1) (shift juktoborno-state))
-						((= CID 21) (delete @-2) (set P2CID CID) (set CID 114) (insert "প্প") (set SLICER 1) (shift juktoborno-state))
-						((= CID 28) (delete @-2) (set P2CID CID) (set CID 115) (insert "প্ল") (set SLICER 1) (shift juktoborno-state))
-						((= CID 31) (delete @-2) (set P2CID CID) (set CID 116) (insert "প্স") (set SLICER 1) (shift juktoborno-state))
-					)
-				)
-				((= PCID 22)
-					(cond
-						((= CID 28) (delete @-2) (set P2CID CID) (set CID 117) (insert "ফ্ল") (set SLICER 1) (shift juktoborno-state))
-					)
-				)
-				((= PCID 23)
-					(cond
-						((= CID 8) (delete @-2) (set P2CID CID) (set CID 118) (insert "ব্জ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 18) (delete @-2) (set P2CID CID) (set CID 119) (insert "ব্দ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 19) (delete @-2) (set P2CID CID) (set CID 120) (insert "ব্ধ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 23) (delete @-2) (set P2CID CID) (set CID 121) (insert "ব্ব") (set SLICER 1) (shift juktoborno-state))
-						((= CID 28) (delete @-2) (set P2CID CID) (set CID 122) (insert "ব্ল") (set SLICER 1) (shift juktoborno-state))
-					)
-				)
-				((= PCID 24)
-					(cond
-						((= CID 23) (delete @-2) (set P2CID CID) (set CID 123) (insert "ভ্ব") (set SLICER 1) (shift juktoborno-state))
-						((= CID 28) (delete @-2) (set P2CID CID) (set CID 124) (insert "ভ্ল") (set SLICER 1) (shift juktoborno-state))
-					)
-				)
-				((= PCID 25)
-					(cond
-						((= CID 20) (delete @-2) (set P2CID CID) (set CID 125) (insert "ম্ন") (set SLICER 1) (shift juktoborno-state))
-						((= CID 21) (delete @-2) (set P2CID CID) (set CID 126) (insert "ম্প") (set SLICER 1) (shift juktoborno-state))
-						((= CID 22) (delete @-2) (set P2CID CID) (set CID 127) (insert "ম্ফ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 23) (delete @-2) (set P2CID CID) (set CID 128) (insert "ম্ব") (set SLICER 1) (shift juktoborno-state))
-						((= CID 24) (delete @-2) (set P2CID CID) (set CID 129) (insert "ম্ভ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 25) (delete @-2) (set P2CID CID) (set CID 130) (insert "ম্ম") (set SLICER 1) (shift juktoborno-state))
-						((= CID 28) (delete @-2) (set P2CID CID) (set CID 131) (insert "ম্ল") (set SLICER 1) (shift juktoborno-state))
-					)
-				)
-				((= PCID 28)
-					(cond
-						((= CID 1) (delete @-2) (set P2CID CID) (set CID 132) (insert "ল্ক") (set SLICER 1) (shift juktoborno-state))
-						((= CID 3) (delete @-2) (set P2CID CID) (set CID 133) (insert "ল্গ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 11) (delete @-2) (set P2CID CID) (set CID 134) (insert "ল্ট") (set SLICER 1) (shift juktoborno-state))
-						((= CID 13) (delete @-2) (set P2CID CID) (set CID 135) (insert "ল্ড") (set SLICER 1) (shift juktoborno-state))
-						((= CID 21) (delete @-2) (set P2CID CID) (set CID 136) (insert "ল্প") (set SLICER 1) (shift juktoborno-state))
-						((= CID 22) (delete @-2) (set P2CID CID) (set CID 137) (insert "ল্ফ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 23) (delete @-2) (set P2CID CID) (set CID 138) (insert "ল্ব") (set SLICER 1) (shift juktoborno-state))
-						((= CID 24) (delete @-2) (set P2CID CID) (set CID 139) (insert "ল্‌ভ") (set SLICER 2) (shift juktoborno-state))
-						((= CID 25) (delete @-2) (set P2CID CID) (set CID 140) (insert "ল্ম") (set SLICER 1) (shift juktoborno-state))
-						((= CID 28) (delete @-2) (set P2CID CID) (set CID 141) (insert "ল্ল") (set SLICER 1) (shift juktoborno-state))
-					)
-				)
-				((= PCID 29)
-					(cond
-						((= CID 6) (delete @-2) (set P2CID CID) (set CID 142) (insert "শ্চ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 7) (delete @-2) (set P2CID CID) (set CID 143) (insert "শ্ছ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 20) (delete @-2) (set P2CID CID) (set CID 144) (insert "শ্ন") (set SLICER 1) (shift juktoborno-state))
-						((= CID 23) (delete @-2) (set P2CID CID) (set CID 145) (insert "শ্ব") (set SLICER 1) (shift juktoborno-state))
-						((= CID 25) (delete @-2) (set P2CID CID) (set CID 146) (insert "শ্ম") (set SLICER 1) (shift juktoborno-state))
-						((= CID 28) (delete @-2) (set P2CID CID) (set CID 147) (insert "শ্ল") (set SLICER 1) (shift juktoborno-state))
-					)
-				)
-				((= PCID 30)
-					(cond
-						((= CID 1) (delete @-2) (set P2CID CID) (set CID 148) (insert "ষ্ক") (set SLICER 1) (shift juktoborno-state))
-						((= CID 11) (delete @-2) (set P2CID CID) (set CID 149) (insert "ষ্ট") (set SLICER 1) (shift juktoborno-state))
-						((= CID 12) (delete @-2) (set P2CID CID) (set CID 150) (insert "ষ্ঠ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 15) (delete @-2) (set P2CID CID) (set CID 151) (insert "ষ্ণ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 20) (delete @-2) (set P2CID CID) (set CID 151) (insert "ষ্ণ") (set SLICER 3) (set ALTERNATE 11) (shift juktoborno-state))
-						((= CID 21) (delete @-2) (set P2CID CID) (set CID 152) (insert "ষ্প") (set SLICER 1) (shift juktoborno-state))
-						((= CID 22) (delete @-2) (set P2CID CID) (set CID 153) (insert "ষ্ফ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 23) (delete @-2) (set P2CID CID) (set CID 154) (insert "ষ্ব") (set SLICER 1) (shift juktoborno-state))
-						((= CID 25) (delete @-2) (set P2CID CID) (set CID 155) (insert "ষ্ম") (set SLICER 1) (shift juktoborno-state))
-					)
-				)
-				((= PCID 31)
-					(cond
-						((= CID 1) (delete @-2) (set P2CID CID) (set CID 156) (insert "স্ক") (set SLICER 1) (shift juktoborno-state))
-						((= CID 2) (delete @-2) (set P2CID CID) (set CID 157) (insert "স্খ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 11) (delete @-2) (set P2CID CID) (set CID 158) (insert "স্ট") (set SLICER 1) (shift juktoborno-state))
-						((= CID 16) (delete @-2) (set P2CID CID) (set CID 159) (insert "স্ত") (set SLICER 1) (shift juktoborno-state))
-						((= CID 17) (delete @-2) (set P2CID CID) (set CID 160) (insert "স্থ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 20) (delete @-2) (set P2CID CID) (set CID 161) (insert "স্ন") (set SLICER 1) (shift juktoborno-state))
-						((= CID 21) (delete @-2) (set P2CID CID) (set CID 162) (insert "স্প") (set SLICER 1) (shift juktoborno-state))
-						((= CID 22) (delete @-2) (set P2CID CID) (set CID 163) (insert "স্ফ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 23) (delete @-2) (set P2CID CID) (set CID 164) (insert "স্ব") (set SLICER 1) (shift juktoborno-state))
-						((= CID 25) (delete @-2) (set P2CID CID) (set CID 165) (insert "স্ম") (set SLICER 1) (shift juktoborno-state))
-						((= CID 28) (delete @-2) (set P2CID CID) (set CID 166) (insert "স্ল") (set SLICER 1) (shift juktoborno-state))
-						((= CID 189) (delete @-2) (set P2CID CID) (set CID 30) (insert "ষ"))
-					)
-				)
-				((= PCID 32)
-					(cond
-						((= CID 15) (delete @-2) (set P2CID CID) (set CID 168) (insert "হ্ণ") (set SLICER 1) (shift juktoborno-state))
-						((= CID 20) (delete @-2) (set P2CID CID) (set CID 167) (insert "হ্ন") (set SLICER 1) (shift juktoborno-state))
-						((= CID 23) (delete @-2) (set P2CID CID) (set CID 169) (insert "হ্ব") (set SLICER 1) (shift juktoborno-state))
-						((= CID 25) (delete @-2) (set P2CID CID) (set CID 170) (insert "হ্ম") (set SLICER 1) (shift juktoborno-state))
-						((= CID 28) (delete @-2) (set P2CID CID) (set CID 171) (insert "হ্ল") (set SLICER 1) (shift juktoborno-state))
-					)
-				)
-				((= PCID 34)
-					(cond
-						((= CID 3) (delete @-2) (set P2CID CID) (set CID 76) (insert "ড়্‌গ") (set SLICER 2) (shift juktoborno-state))
-						((= CID 189) (delete @-2) (set P2CID CID) (set CID 35) (insert "ঢ়"))
-					)
-				)
-				((= PCID 39)
-					(cond
-						((= CID 15) (delete @-4) (set P2CID CID) (set CID 172) (insert "ক্ষ্ণ") (shift juktoborno-state))
-						((= CID 20) (delete @-4) (set P2CID CID) (set CID 172) (insert "ক্ষ্ণ") (shift juktoborno-state))
-						((= CID 23) (delete @-4) (set P2CID CID) (set CID 173) (insert "ক্ষ্ব") (shift juktoborno-state))
-						((= CID 25) (delete @-4) (set P2CID CID) (set CID 174) (insert "ক্ষ্ম") (shift juktoborno-state))
-					)
-				)
-				((= PCID 27)
-					(cond
-						((= CID 189) (delete @-2) (set P2CID CID) (set CID 34) (insert "ড়"))
-					)
-				)
-			)
-			(set PCID CID) ;; ব্যঞ্জনের পরে ব্যঞ্জন লেখা হলে শেষ যত CID সেট করা হলো, হোক সেটা যুক্তবর্ণ কিংবা একক ব্যঞ্জন, সেটার CID -কে PCID তে পাঠিয়ে দেওয়া হলো। যাতে এর পরে আবার ব্যঞ্জন লেখা হলে সেটা এটার সাথে যুক্ত করা বা না করার সিদ্ধান্ত নেওয়া যায়।
-		)
-		(slicer
-			(cond
-				((= PCID 16) (delete @-2) (insert "ৎ") (set PCID 188))
-				(1 (shift init))
-			)
-		)
-		(slicer2 
-			(cond
-				((= PCID 16) (delete @-2) (insert "ত/"))
-				(1 (delete @-) (insert "ঁ") (shift shor-state))
-			)
-		)
-		(slicer3 (shift init))
-		(diacritic  (shift shor-state))
+	}
 	
-		(backspace)
-	)
-	(juktoborno-state
-		(slicer
-			(delete @-)
-			(cond
-				((= SLICER 1)  (move @-)  (delete @-)  (move @>) (set PCID P2CID) (shift byanjon-state) )
-				;; লক্ষ্যণীয়, এখানে স্লাইসিংয়ের পরই P2CID এর মান PCID -তে সেট করা হচ্ছে। যাতে এর পরে অন্য কোনো ব্যঞ্জন লিখলে সেটা যুক্তবর্ণ গঠন করতে পারে।
-				((= SLICER 2)  (move @-)  (delete @-2)  (move @>) (set PCID P2CID) (shift byanjon-state) )
-				((= SLICER 3) 
-					(cond 
-						((= ALTERNATE 1)  (delete @-3) (insert "কখ") (set PCID 2) (shift byanjon-state) )
-						((= ALTERNATE 2)  (delete @-3) (insert "গগ") (set PCID 3) (shift byanjon-state) )
-						((= ALTERNATE 3)  (delete @-3) (insert "ণন") (set PCID 20) (shift byanjon-state) )
-						((= ALTERNATE 4)  (delete @-3) (insert "তট") (set PCID 11) (shift byanjon-state) )
-						((= ALTERNATE 5)  (delete @-3) (insert "দড") (set PCID 13) (shift byanjon-state) )
-						((= ALTERNATE 6)  (delete @-3) (insert "নচ") (set PCID 6) (shift byanjon-state) )
-						((= ALTERNATE 7)  (delete @-3) (insert "নছ") (set PCID 7) (shift byanjon-state) )
-						((= ALTERNATE 8)  (delete @-3) (insert "নজ") (set PCID 8) (shift byanjon-state) )
-						((= ALTERNATE 9)  (delete @-3) (insert "নঝ") (set PCID 9) (shift byanjon-state) )		
-						((= ALTERNATE 10)  (delete @-3) (insert "নণ") (set PCID 15) (shift byanjon-state) )		
-						((= ALTERNATE 11)  (delete @-3) (insert "ষন") (set PCID 20) (shift byanjon-state) )		
-					)
-				)
-				((= SLICER 4)  (move @-) (move @-) (move @-)  (delete @-)  (move @>) )
-			)
-			(set SLICER 0)
-		)
-		(diacritic  (shift shor-state))
-		(slicer2 (shift init))
-		(slicer3 (shift init))
-		(prithayok (delete @-)  (shift init))
-		(ongko  (shift init))
-		(biram  (shift init))
-		(kar (shift shor-state))
+}
 
-		(phola
-			(move @-) (insert ?্) (move @>) (set P2CID CID) (set SLICER 1)
-			(set PCID CID) ;; ব্যঞ্জনের পরে ব্যঞ্জন লেখা হলে শেষ যত CID সেট করা হলো, হোক সেটা যুক্তবর্ণ কিংবা একক ব্যঞ্জন, সেটার CID -কে PCID তে পাঠিয়ে দেওয়া হলো। যাতে এর পরে আবার ব্যঞ্জন লেখা হলে সেটা এটার সাথে যুক্ত করা বা না করার সিদ্ধান্ত নেওয়া যায়।
-		)
-		(byanjon 
-			(cond
-				((= PCID 39)
-					(cond
-						((= CID 15) (delete @-4) (set P2CID CID) (set CID 172) (insert "ক্ষ্ণ"))
-						((= CID 20) (delete @-4) (set P2CID CID) (set CID 172) (insert "ক্ষ্ণ"))
-						((= CID 23) (delete @-4) (set P2CID CID) (set CID 173) (insert "ক্ষ্ব"))
-						((= CID 25) (delete @-4) (set P2CID CID) (set CID 174) (insert "ক্ষ্ম"))
-					)
-				)
-				((= PCID 65)
-					(cond
-						((& (= CID 3) (= P2CID 3)) (delete @-4) (set P2CID CID) (set CID 175) (set SLICER 3) (set ALTERNATE 2) (insert "গ্‌গ"))						
-					)
-				)
-				((= PCID 53)
-					(cond
-						((= CID 2) (delete @-4) (set P2CID CID) (set CID 58) (set SLICER 3) (set ALTERNATE 1) (insert "ঙ্ক্ষ"))
-						((= CID 30) (delete @-4) (set P2CID CID) (set CID 58) (set SLICER 1) (insert "ঙ্ক্ষ"))
-						((= CID 16) (delete @-4) (set P2CID CID) (set CID 176) (set SLICER 1) (insert "ঙ্‌ক্ত"))
-					)
-				)
-				((= PCID 60)
-					(cond
-						((= CID 23) (delete @-4) (set P2CID CID) (set CID 177) (set SLICER 1) (insert "চ্ছ্ব"))						
-					)
-				)
-				((= PCID 63)
-					(cond
-						((= CID 23) (delete @-4) (set P2CID CID) (set CID 178) (set SLICER 1) (insert "জ্জ্ব"))						
-					)
-				)
-				((= PCID 84)
-					(cond
-						((= CID 23) (delete @-4) (set P2CID CID) (set CID 179) (set SLICER 1) (insert "ত্ত্ব"))						
-					)
-				)
-				((= PCID 92)
-					(cond
-						((= CID 23) (delete @-4) (set P2CID CID) (set CID 180) (set SLICER 1) (insert "দ্দ্ব"))						
-					)
-				)
-				((= PCID 103)
-					(cond
-						((= CID 23) (delete @-4) (set P2CID CID) (set CID 181) (set SLICER 1) (insert "ন্ত্ব"))						
-					)
-				)
-				((= PCID 105)
-					(cond
-						((= CID 23) (delete @-4) (set P2CID CID) (set CID 182) (set SLICER 1) (insert "ন্দ্ব"))						
-					)
-				)				
-				((= PCID 159)
-					(cond
-						((= CID 23) (delete @-4) (set P2CID CID) (set CID 183) (set SLICER 1) (insert "স্ত্ব"))						
-					)
-				)
-				((= PCID 162)
-					(cond
-						((= CID 28) (delete @-4) (set P2CID CID) (set CID 184) (set SLICER 1) (insert "স্প্ল"))						
-					)
-				)
-				((= PCID 110)
-					(cond
-						((= CID 11) (delete @-4) (set P2CID CID) (set CID 185) (set SLICER 1) (insert "নস্ট"))						
-					)
-				)	
-				((= PCID 126)
-					(cond
-						((= CID 28) (delete @-4) (set P2CID CID) (set CID 186) (set SLICER 1) (insert "মপ্ল"))						
-					)
-				)
-				(1 (set PCID CID) (shift byanjon-state))	
-			)
-		)
-		(backspace)
+The STATE MACHINE or core-function:
+	state: "init": 
+		"""
+			Whenever entering a state, the STATE_ENTRY_ACTIONS is executed as a must.
+		"""
 
-	)
-)
+		STATE_ENTRY_ACTIONS: 
+			{(set P2CID 0) (set ALTERNATE 0) (set PCID 0) (set CID 0) (set SLICER 0) (set KAR 0)}
+
+		matcher:(token) 
+		
+			"""
+			Instruction:
+				the matcher will follow a greedy longest match approach. The longest matchable token is tried to be matched with the dictionaries mentioned below. If matched with none, things to do is also mentioned below.
+				For example, if the ditionaries mentioned in a state were as follows: dict1= {"a" "A"}, dict2={("." "..") ("ab" "mm")} and the user inputs "ab.?" The output will be "mm..?". Note that "a" was not matched since "ab" was a longer match. And since "?" does not match with any dictionary, it is passed as it is.
+			"""
+			
+			if matched = "diacritic" :
+				{(commit)  (setNextState = "shor-state")}
+			elif matched = "slicer" :
+				{(commit)}
+			elif matched = "slicer3" :
+				{(commit)}
+			elif matched = "slicer2" :
+				{ (delete @-) (insert "ঁ") (setNextState = "shor-state")}
+				"""
+				here, `delete @-` means to delete one character towards the left of the cursor.
+				insert means to insert the mentioned string at the cursor position.
+				"""
+			elif matched = "shor" :
+				{ (setNextState = "shor-state")}
+			elif matched = "fkar" :
+				{ (commit)  (setNextState = "shor-state")}
+			elif matched = "prithayok" :	
+				( (commit) )
+			elif matched = "ongko" :
+				{ no extra actions}
+			elif matched = "biram" :
+				{ no extra actions}
+			elif matched = "byanjon" :
+				{(set PCID CID) (setNextState = "byanjon-state")}
+			else:
+				{ send the raw unmatched input; no extra actions}
+		
+		if: setNextState is something other than "init" : then, shift to that state.
+		else: stay in init
+	
+
+
+	state: "shor-state": 
+		STATE_ENTRY_ACTIONS: {(set P2CID 0) (set ALTERNATE 0) (set PCID 0) (set CID 0) (set SLICER 0)}
+		matcher:(token) 
+			"""
+			Instruction:
+				the matcher will follow a greedy longest match approach. The longest matchable token is tried to be matched with the dictionaries mentioned below. If not matched, things to do is also mentioned below.
+			"""
+			if matched = "diacritic" :
+				{ no extra actions }
+			elif matched slicer :
+			    {(delete @-) (insert "ঁ")}
+			elif matched slicer2 :
+			    {(setNextState = init)}
+			elif matched slicer3 :
+			    {(setNextState = init)}
+			elif matched "shor" :
+			    { no extra actions}
+			elif matched fkar :
+				{no extra actions}
+			elif matched biram : 
+				{(setNextState = init)}
+			elif matched prithayok : 
+			    {(delete @-)  (setNextState = init) }
+			elif matched ongko : 
+			    {(setNextState = init)}
+			elif matched byanjon : 
+			    {(set PCID CID) (setNextState ="byanjon-state")}
+			else :
+				{ send the raw unmatched input;} {setNextState = init}
+		
+		if: setNextState is something other than "shor-state" : then, shift to that state.
+		else: stay in shor-state
+	
+	state: byanjon-state: 
+		matcher (token): 
+			if matched = "prithayok" 
+				{(delete @-)  (setNextState = init)}
+			elif matched = "ongko" 
+				{(setNextState = init)}
+			elif matched = "biram" 
+				{(setNextState = init)}
+			elif matched = "kar" 
+			    """
+				Here "move" means to move the cursor within the pre-edit. "move @-" means to move the cursor one position to the left of the current cursor position. And "move @>" means to move the cursor to the end of the pre-edit.
+				"""
+				(conditionBlock:
+					( { if: {(PCID == 27) or (PCID == 187)} and (KAR == 1) } (move @-) (move @-) (move @-) (insert "‍") (move @>) (set KAR 0) )  
+				)
+				(setNextState ="shor-state")
+			
+
+			elif matched = phola : 
+				conditionBlock: 
+					if: (PCID == 27) and (CID == 26): (delete @-) (delete @-) (set P2CID CID) (set CID 37) (insert "র‍্য") (set SLICER 2) (setNextState = juktoborno-state)
+					elif: (PCID == 187) : (move @-) (delete @-) (insert ?্) (move @>) (set SLICER 1)
+					else: (move @-) (insert ?্) (move @>) (set P2CID CID) (set SLICER 1) (setNextState = juktoborno-state) 
+				
+				(set PCID CID) 
+				
+			
+			elif matched = byanjon : 
+				(conditionBlock:
+					(if (PCID == 187)
+						(conditionBlock:
+							(( if CID == 39) (move @-) (move @-) (move @-) (delete @-) (insert "্") (move @>) (set P2CID CID) (set SLICER 4))
+							((else if CID == 189) (delete @-2) (set P2CID CID) (set CID 34) (insert "ড়"))
+							(( else if CID == 187) (set P2CID CID)) 
+							(else: (move @-) (delete @-) (insert "্") (move @>) (set P2CID CID) (set SLICER 1))
+							
+						)
+					)
+					(else if (PCID == 1) 
+						(conditionBlock:
+							(( if CID == 1) (delete @-2) (set P2CID CID) (set CID 38) (insert "ক্ক") (set SLICER 1) (setNextState = juktoborno-state))
+
+							((else if CID == 2) (delete @-2) (set P2CID CID) (set CID 39) (insert "ক্ষ") (set SLICER 3) (set ALTERNATE 1) (setNextState = juktoborno-state))
+							((else if CID == 11) (delete @-2) (set P2CID CID) (set CID 40) (insert "ক্ট") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 16) (delete @-2) (set P2CID CID) (set CID 41) (insert "ক্ত") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 23) (delete @-2) (set P2CID CID) (set CID 42) (insert "ক্ব") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 25) (delete @-2) (set P2CID CID) (set CID 43) (insert "ক্ম") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 30) (delete @-2) (set P2CID CID) (set CID 39) (insert "ক্ষ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 28) (delete @-2) (set P2CID CID) (set CID 44) (insert "ক্ল") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 31) (delete @-2) (set P2CID CID) (set CID 45) (insert "ক্স") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 189) (delete @-2) (set P2CID CID) (set CID 39) (insert "ক্ষ"))
+						)
+					)
+					(else if (PCID == 3) 
+						(conditionBlock:
+							(( if CID == 3) (delete @-2) (set P2CID CID) (set CID 65) (insert "জ্ঞ") (set SLICER 3) (set ALTERNATE 2) (setNextState = juktoborno-state))
+							((else if CID == 15) (delete @-2) (set P2CID CID) (set CID 46) (insert "গ্‌ণ") (set SLICER 2) (setNextState = juktoborno-state))
+							((else if CID == 19) (delete @-2) (set P2CID CID) (set CID 47) (insert "গ্ধ") (set SLICER 1) (setNextState = juktoborno-state))
+							
+							((else if CID == 20) (delete @-2) (set P2CID CID) (set CID 48) (insert "গ্ন") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 23) (delete @-2) (set P2CID CID) (set CID 49) (insert "গ্ব") (set SLICER 2) (setNextState = juktoborno-state))
+							
+							((else if CID == 25) (delete @-2) (set P2CID CID) (set CID 50) (insert "গ্ম") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 28) (delete @-2) (set P2CID CID) (set CID 51) (insert "গ্ল") (set SLICER 1) (setNextState = juktoborno-state))
+						)
+					)
+					(else if (PCID == 4)
+						(conditionBlock:
+							((else if CID == 20) (delete @-2) (set P2CID CID) (set CID 52) (insert "ঘ্ন") (set SLICER 1) (setNextState = juktoborno-state))
+						)
+					)
+					(else if (PCID == 5)
+						(conditionBlock:
+							((if CID == 1) (delete @-2) (set P2CID CID) (set CID 53) (insert "ঙ্ক") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 2) (delete @-2) (set P2CID CID) (set CID 54) (insert "ঙ্খ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 3) (delete @-2) (set P2CID CID) (set CID 55) (insert "ঙ্গ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 4) (delete @-2) (set P2CID CID) (set CID 56) (insert "ঙ্ঘ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 25) (delete @-2) (set P2CID CID) (set CID 57) (insert "ঙ্ম") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 39) (delete @-4) (set P2CID CID) (set CID 58) (insert "ঙ্ক্ষ") (set SLICER 4) (setNextState = juktoborno-state))
+						)
+					)
+					(else if (PCID == 6)
+						(conditionBlock:
+							((if CID == 6) (delete @-2) (set P2CID CID) (set CID 59) (insert "চ্চ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 7) (delete @-2) (set P2CID CID) (set CID 60) (insert "চ্ছ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 10) (delete @-2) (set P2CID CID) (set CID 61) (insert "চ্ঞ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 23) (delete @-2) (set P2CID CID) (set CID 62) (insert "চ্ব") (set SLICER 1) (setNextState = juktoborno-state))
+						)
+					)
+					(else if (PCID == 8)
+						(conditionBlock:
+							((if CID == 8) (delete @-2) (set P2CID CID) (set CID 63) (insert "জ্জ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 9) (delete @-2) (set P2CID CID) (set CID 64) (insert "জ্ঝ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 10) (delete @-2) (set P2CID CID) (set CID 65) (insert "জ্ঞ") (set SLICER 1) (setNextState = juktoborno-state)) 
+							((else if CID == 23) (delete @-2) (set P2CID CID) (set CID 66) (insert "জ্ব") (set SLICER 1) (setNextState = juktoborno-state))
+						)
+					)
+					(else if (PCID == 10)
+						(conditionBlock:
+							((if CID == 6) (delete @-2) (set P2CID CID) (set CID 67) (insert "ঞ্চ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 7) (delete @-2) (set P2CID CID) (set CID 68) (insert "ঞ্ছ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 8) (delete @-2) (set P2CID CID) (set CID 69) (insert "ঞ্জ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 9) (delete @-2) (set P2CID CID) (set CID 70) (insert "ঞ্ঝ") (set SLICER 1) (setNextState = juktoborno-state))
+						)
+					)
+					(else if (PCID == 11)
+						(conditionBlock:
+							((if CID == 11) (delete @-2) (set P2CID CID) (set CID 71) (insert "ট্ট") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 23) (delete @-2) (set P2CID CID) (set CID 72) (insert "ট্ব") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 25) (delete @-2) (set P2CID CID) (set CID 73) (insert "ট্ম") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 189) (delete @-2) (set P2CID CID) (set CID 12) (insert "ঠ"))
+						)
+					)
+					(else if (PCID == 13)
+						(conditionBlock:
+							((if CID == 13) (delete @-2) (set P2CID CID) (set CID 74) (insert "ড্ড") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 23) (delete @-2) (set P2CID CID) (set CID 75) (insert "ড্ব") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 189) (delete @-2) (set P2CID CID) (set CID 14) (insert "ঢ"))
+						)
+					)
+					(else if (PCID == 15)
+						(conditionBlock:
+							((if CID == 11) (delete @-2) (set P2CID CID) (set CID 77) (insert "ণ্ট") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 12) (delete @-2) (set P2CID CID) (set CID 78) (insert "ণ্ঠ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 13) (delete @-2) (set P2CID CID) (set CID 79) (insert "ণ্ড") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 14) (delete @-2) (set P2CID CID) (set CID 80) (insert "ণ্ঢ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 15) (delete @-2) (set P2CID CID) (set CID 81) (insert "ণ্ণ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 20) (delete @-2) (set P2CID CID) (set CID 81) (insert "ণ্ণ") (set SLICER 3) (set ALTERNATE 3) (setNextState = juktoborno-state))
+							((else if CID == 23) (delete @-2) (set P2CID CID) (set CID 82) (insert "ণ্ব") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 25) (delete @-2) (set P2CID CID) (set CID 83) (insert "ণ্ম") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 189) (delete @-2) (set P2CID CID) (set CID 10) (insert "ঞ"))
+						)
+					)
+					(else if (PCID == 16)
+						(conditionBlock:
+							((if CID == 11) (delete @-2) (set P2CID CID) (set CID 71) (insert "ট্ট") (set SLICER 3) (set ALTERNATE 4) (setNextState = juktoborno-state)) ;; এটা ত এর যুক্তবর্ণ না হলেও এটা এখানে থাকবে
+							((else if CID == 16) (delete @-2) (set P2CID CID) (set CID 84) (insert "ত্ত") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 17) (delete @-2) (set P2CID CID) (set CID 85) (insert "ত্থ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 20) (delete @-2) (set P2CID CID) (set CID 86) (insert "ত্ন") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 23) (delete @-2) (set P2CID CID) (set CID 87) (insert "ত্ব") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 25) (delete @-2) (set P2CID CID) (set CID 88) (insert "ত্ম") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 189) (delete @-2) (set P2CID CID) (set CID 11) (insert "ট"))
+						)
+					)
+					(else if (PCID == 17)
+						(conditionBlock:
+							((if CID == 23) (delete @-2) (set P2CID CID) (set CID 89) (insert "থ্ব") (set SLICER 1) (setNextState = juktoborno-state))
+						)
+					)
+					(else if (PCID == 18)
+						(conditionBlock:
+							(( if CID == 3) (delete @-2) (set P2CID CID) (set CID 90) (insert "দ্‌গ") (set SLICER 2) (setNextState = juktoborno-state))
+							((else if CID == 4) (delete @-2) (set P2CID CID) (set CID 91) (insert "দ্‌ঘ") (set SLICER 2) (setNextState = juktoborno-state))
+							((else if CID == 13) (delete @-2) (set P2CID CID) (set CID 74) (insert "ড্ড") (set SLICER 3) (set ALTERNATE 5) (setNextState = juktoborno-state)) ;; এটা দ এর যুক্তবর্ণ না হলেও এটা এখানে থাকবে
+							((else if CID == 18) (delete @-2) (set P2CID CID) (set CID 92) (insert "দ্দ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 19) (delete @-2) (set P2CID CID) (set CID 93) (insert "দ্ধ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 23) (delete @-2) (set P2CID CID) (set CID 94) (insert "দ্ব") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 24) (delete @-2) (set P2CID CID) (set CID 95) (insert "দ্ভ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 25) (delete @-2) (set P2CID CID) (set CID 96) (insert "দ্ম") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 189) (delete @-2) (set P2CID CID) (set CID 13) (insert "ড"))
+						)
+					)
+					(else if (PCID == 19)
+						(conditionBlock:
+							(( if CID == 20) (delete @-2) (set P2CID CID) (set CID 97) (insert "ধ্ন") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 23) (delete @-2) (set P2CID CID) (set CID 98) (insert "ধ্ব") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 25) (delete @-2) (set P2CID CID) (set CID 99) (insert "ধ্ম") (set SLICER 1) (setNextState = juktoborno-state))
+						)
+					)
+					(else if (PCID == 20)
+						(conditionBlock:
+							(( if CID == 6) (delete @-2) (set P2CID CID) (set CID 67) (insert "ঞ্চ") (set SLICER 3) (set ALTERNATE 6) (setNextState = juktoborno-state))
+							((else if CID == 7) (delete @-2) (set P2CID CID) (set CID 68) (insert "ঞ্ছ") (set SLICER 3) (set ALTERNATE 7) (setNextState = juktoborno-state))
+							((else if CID == 8) (delete @-2) (set P2CID CID) (set CID 69) (insert "ঞ্জ") (set SLICER 3) (set ALTERNATE 8) (setNextState = juktoborno-state))
+							((else if CID == 9) (delete @-2) (set P2CID CID) (set CID 70) (insert "ঞ্ঝ") (set SLICER 3) (set ALTERNATE 9) (setNextState = juktoborno-state))
+							((else if CID == 11) (delete @-2) (set P2CID CID) (set CID 100) (insert "ন্ট") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 12) (delete @-2) (set P2CID CID) (set CID 101) (insert "ন্ঠ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 13) (delete @-2) (set P2CID CID) (set CID 102) (insert "ন্ড") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 15) (delete @-2) (set P2CID CID) (set CID 81) (insert "ণ্ণ") (set SLICER 3) (set ALTERNATE 10) (setNextState = juktoborno-state))
+							((else if CID == 16) (delete @-2) (set P2CID CID) (set CID 103) (insert "ন্ত") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 17) (delete @-2) (set P2CID CID) (set CID 104) (insert "ন্থ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 18) (delete @-2) (set P2CID CID) (set CID 105) (insert "ন্দ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 19) (delete @-2) (set P2CID CID) (set CID 106) (insert "ন্ধ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 20) (delete @-2) (set P2CID CID) (set CID 107) (insert "ন্ন") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 23) (delete @-2) (set P2CID CID) (set CID 108) (insert "ন্ব") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 25) (delete @-2) (set P2CID CID) (set CID 109) (insert "ন্ম") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 31) (delete @-2) (set P2CID CID) (set CID 110) (insert "ন্স") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 189) (delete @-2) (set P2CID CID) (set CID 15) (insert "ণ"))
+						)
+					)
+					(else if (PCID == 21)
+						(conditionBlock:
+							((if CID == 11) (delete @-2) (set P2CID CID) (set CID 111) (insert "প্ট") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 16) (delete @-2) (set P2CID CID) (set CID 112) (insert "প্ত") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 20) (delete @-2) (set P2CID CID) (set CID 113) (insert "প্ন") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 21) (delete @-2) (set P2CID CID) (set CID 114) (insert "প্প") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 28) (delete @-2) (set P2CID CID) (set CID 115) (insert "প্ল") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 31) (delete @-2) (set P2CID CID) (set CID 116) (insert "প্স") (set SLICER 1) (setNextState = juktoborno-state))
+						)
+					)
+					(else if (PCID == 22)
+						(conditionBlock:
+							((if CID == 28) (delete @-2) (set P2CID CID) (set CID 117) (insert "ফ্ল") (set SLICER 1) (setNextState = juktoborno-state))
+						)
+					)
+					(else if (PCID == 23)
+						(conditionBlock:
+							((if CID == 8) (delete @-2) (set P2CID CID) (set CID 118) (insert "ব্জ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 18) (delete @-2) (set P2CID CID) (set CID 119) (insert "ব্দ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 19) (delete @-2) (set P2CID CID) (set CID 120) (insert "ব্ধ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 23) (delete @-2) (set P2CID CID) (set CID 121) (insert "ব্ব") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 28) (delete @-2) (set P2CID CID) (set CID 122) (insert "ব্ল") (set SLICER 1) (setNextState = juktoborno-state))
+						)
+					)
+					(else if (PCID == 24)
+						(conditionBlock:
+							((if CID == 23) (delete @-2) (set P2CID CID) (set CID 123) (insert "ভ্ব") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 28) (delete @-2) (set P2CID CID) (set CID 124) (insert "ভ্ল") (set SLICER 1) (setNextState = juktoborno-state))
+						)
+					)
+					(else if (PCID == 25)
+						(conditionBlock:
+							((if CID == 20) (delete @-2) (set P2CID CID) (set CID 125) (insert "ম্ন") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 21) (delete @-2) (set P2CID CID) (set CID 126) (insert "ম্প") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 22) (delete @-2) (set P2CID CID) (set CID 127) (insert "ম্ফ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 23) (delete @-2) (set P2CID CID) (set CID 128) (insert "ম্ব") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 24) (delete @-2) (set P2CID CID) (set CID 129) (insert "ম্ভ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 25) (delete @-2) (set P2CID CID) (set CID 130) (insert "ম্ম") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 28) (delete @-2) (set P2CID CID) (set CID 131) (insert "ম্ল") (set SLICER 1) (setNextState = juktoborno-state))
+						)
+					)
+					(else if (PCID == 28)
+						(conditionBlock:
+							((if CID == 1) (delete @-2) (set P2CID CID) (set CID 132) (insert "ল্ক") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 3) (delete @-2) (set P2CID CID) (set CID 133) (insert "ল্গ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 11) (delete @-2) (set P2CID CID) (set CID 134) (insert "ল্ট") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 13) (delete @-2) (set P2CID CID) (set CID 135) (insert "ল্ড") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 21) (delete @-2) (set P2CID CID) (set CID 136) (insert "ল্প") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 22) (delete @-2) (set P2CID CID) (set CID 137) (insert "ল্ফ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 23) (delete @-2) (set P2CID CID) (set CID 138) (insert "ল্ব") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 24) (delete @-2) (set P2CID CID) (set CID 139) (insert "ল্‌ভ") (set SLICER 2) (setNextState = juktoborno-state))
+							((else if CID == 25) (delete @-2) (set P2CID CID) (set CID 140) (insert "ল্ম") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 28) (delete @-2) (set P2CID CID) (set CID 141) (insert "ল্ল") (set SLICER 1) (setNextState = juktoborno-state))
+						)
+					)
+					(else if (PCID == 29)
+						(conditionBlock:
+							((if CID == 6) (delete @-2) (set P2CID CID) (set CID 142) (insert "শ্চ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 7) (delete @-2) (set P2CID CID) (set CID 143) (insert "শ্ছ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 20) (delete @-2) (set P2CID CID) (set CID 144) (insert "শ্ন") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 23) (delete @-2) (set P2CID CID) (set CID 145) (insert "শ্ব") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 25) (delete @-2) (set P2CID CID) (set CID 146) (insert "শ্ম") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 28) (delete @-2) (set P2CID CID) (set CID 147) (insert "শ্ল") (set SLICER 1) (setNextState = juktoborno-state))
+						)
+					)
+					(else if (PCID == 30)
+						(conditionBlock:
+							((if CID == 1) (delete @-2) (set P2CID CID) (set CID 148) (insert "ষ্ক") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 11) (delete @-2) (set P2CID CID) (set CID 149) (insert "ষ্ট") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 12) (delete @-2) (set P2CID CID) (set CID 150) (insert "ষ্ঠ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 15) (delete @-2) (set P2CID CID) (set CID 151) (insert "ষ্ণ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 20) (delete @-2) (set P2CID CID) (set CID 151) (insert "ষ্ণ") (set SLICER 3) (set ALTERNATE 11) (setNextState = juktoborno-state))
+							((else if CID == 21) (delete @-2) (set P2CID CID) (set CID 152) (insert "ষ্প") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 22) (delete @-2) (set P2CID CID) (set CID 153) (insert "ষ্ফ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 23) (delete @-2) (set P2CID CID) (set CID 154) (insert "ষ্ব") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 25) (delete @-2) (set P2CID CID) (set CID 155) (insert "ষ্ম") (set SLICER 1) (setNextState = juktoborno-state))
+						)
+					)
+					(else if (PCID == 31)
+						(conditionBlock:
+							((if CID == 1) (delete @-2) (set P2CID CID) (set CID 156) (insert "স্ক") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 2) (delete @-2) (set P2CID CID) (set CID 157) (insert "স্খ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 11) (delete @-2) (set P2CID CID) (set CID 158) (insert "স্ট") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 16) (delete @-2) (set P2CID CID) (set CID 159) (insert "স্ত") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 17) (delete @-2) (set P2CID CID) (set CID 160) (insert "স্থ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 20) (delete @-2) (set P2CID CID) (set CID 161) (insert "স্ন") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 21) (delete @-2) (set P2CID CID) (set CID 162) (insert "স্প") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 22) (delete @-2) (set P2CID CID) (set CID 163) (insert "স্ফ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 23) (delete @-2) (set P2CID CID) (set CID 164) (insert "স্ব") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 25) (delete @-2) (set P2CID CID) (set CID 165) (insert "স্ম") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 28) (delete @-2) (set P2CID CID) (set CID 166) (insert "স্ল") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 189) (delete @-2) (set P2CID CID) (set CID 30) (insert "ষ"))
+						)
+					)
+					(else if (PCID == 32)
+						(conditionBlock:
+							((if CID == 15) (delete @-2) (set P2CID CID) (set CID 168) (insert "হ্ণ") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 20) (delete @-2) (set P2CID CID) (set CID 167) (insert "হ্ন") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 23) (delete @-2) (set P2CID CID) (set CID 169) (insert "হ্ব") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 25) (delete @-2) (set P2CID CID) (set CID 170) (insert "হ্ম") (set SLICER 1) (setNextState = juktoborno-state))
+							((else if CID == 28) (delete @-2) (set P2CID CID) (set CID 171) (insert "হ্ল") (set SLICER 1) (setNextState = juktoborno-state))
+						)
+					)
+					(else if (PCID == 34)
+						(conditionBlock:
+							((if CID == 3) (delete @-2) (set P2CID CID) (set CID 76) (insert "ড়্‌গ") (set SLICER 2) (setNextState = juktoborno-state))
+							((else if CID == 189) (delete @-2) (set P2CID CID) (set CID 35) (insert "ঢ়"))
+						)
+					)
+					(else if (PCID == 39)
+						(conditionBlock:
+							((if CID == 15) (delete @-4) (set P2CID CID) (set CID 172) (insert "ক্ষ্ণ") (setNextState = juktoborno-state))
+							((else if CID == 20) (delete @-4) (set P2CID CID) (set CID 172) (insert "ক্ষ্ণ") (setNextState = juktoborno-state))
+							((else if CID == 23) (delete @-4) (set P2CID CID) (set CID 173) (insert "ক্ষ্ব") (setNextState = juktoborno-state))
+							((else if CID == 25) (delete @-4) (set P2CID CID) (set CID 174) (insert "ক্ষ্ম") (setNextState = juktoborno-state))
+						)
+					)
+					(else if (PCID == 27)
+						(conditionBlock:
+							((if CID == 189) (delete @-2) (set P2CID CID) (set CID 34) (insert "ড়"))
+						)
+					)
+				)
+				(set PCID CID) 
+			
+			elif matched = slicer: 
+				conditionBlock:
+					((if PCID == 16) (delete @-2) (insert "ৎ") (set PCID 188))
+					(else : (setNextState = init))
+			elif matched = slicer2: 
+				conditionBlock:
+					((if PCID == 16) (delete @-2) (insert "ত/"))
+					(else : (delete @-) (insert "ঁ") (setNextState ="shor-state"))
+			elif matched = slicer3: 
+				(setNextState = init)
+			elif matched = diacritic: 
+				(setNextState ="shor-state")
+			else: { send the raw unmatched input;} {setNextState = init}
+		
+		if: setNextState is something other than "byanjon-state" : then, shift to that state.
+		else: stay in byanjon-state
+	
+	state: juktoborno-state 
+		matcher (token):
+			if matched = slicer :
+				(delete @-)
+				conditionBlock:
+					((if SLICER == 1)  (move @-)  (delete @-)  (move @>) (set PCID P2CID) (setNextState ="byanjon-state") )
+					((else if SLICER == 2)  (move @-)  (delete @-2)  (move @>) (set PCID P2CID) (setNextState ="byanjon-state") )
+					(else if SLICER == 3) 
+						conditionBlock: 
+							((if ALTERNATE == 1)  (delete @-3) (insert "কখ") (set PCID 2) (setNextState ="byanjon-state") )
+							((else if ALTERNATE == 2)  (delete @-3) (insert "গগ") (set PCID 3) (setNextState ="byanjon-state") )
+							((else if ALTERNATE == 3)  (delete @-3) (insert "ণন") (set PCID 20) (setNextState ="byanjon-state") )
+							((else if ALTERNATE == 4)  (delete @-3) (insert "তট") (set PCID 11) (setNextState ="byanjon-state") )
+							((else if ALTERNATE == 5)  (delete @-3) (insert "দড") (set PCID 13) (setNextState ="byanjon-state") )
+							((else if ALTERNATE == 6)  (delete @-3) (insert "নচ") (set PCID 6) (setNextState ="byanjon-state") )
+							((else if ALTERNATE == 7)  (delete @-3) (insert "নছ") (set PCID 7) (setNextState ="byanjon-state") )
+							((else if ALTERNATE == 8)  (delete @-3) (insert "নজ") (set PCID 8) (setNextState ="byanjon-state") )
+							((else if ALTERNATE == 9)  (delete @-3) (insert "নঝ") (set PCID 9) (setNextState ="byanjon-state") )		
+							((else if ALTERNATE == 10)  (delete @-3) (insert "নণ") (set PCID 15) (setNextState ="byanjon-state") )		
+							((else if ALTERNATE == 11)  (delete @-3) (insert "ষন") (set PCID 20) (setNextState ="byanjon-state") )		
+						
+					
+					((else if SLICER == 4)  (move @-) (move @-) (move @-)  (delete @-)  (move @>) )
+				
+				(set SLICER 0)
+			
+			elif matched = diacritic : (setNextState ="shor-state")
+			elif matched = slicer2 : (setNextState = init)
+			elif matched = slicer3 : (setNextState = init)
+			elif matched = prithayok : (delete @-)  (setNextState = init)
+			elif matched = ongko : (setNextState = init)
+			elif matched = biram : (setNextState = init)
+			elif matched = kar : (setNextState ="shor-state")
+
+			elif matched = phola :
+				(move @-) (insert ?্) (move @>) (set P2CID CID) (set SLICER 1)
+				(set PCID CID) 
+			
+			elif matched = byanjon :
+				conditionBlock:
+					(else if PCID == 39)
+						conditionBlock:
+							((if CID == 15) (delete @-4) (set P2CID CID) (set CID 172) (insert "ক্ষ্ণ"))
+							((else if CID == 20) (delete @-4) (set P2CID CID) (set CID 172) (insert "ক্ষ্ণ"))
+							((else if CID == 23) (delete @-4) (set P2CID CID) (set CID 173) (insert "ক্ষ্ব"))
+							((else if CID == 25) (delete @-4) (set P2CID CID) (set CID 174) (insert "ক্ষ্ম"))
+						
+					
+					(else if PCID == 65)
+						conditionBlock:
+							((if ( (CID == 3) and (P2CID == 3)) (delete @-4) (set P2CID CID) (set CID 175) (set SLICER 3) (set ALTERNATE 2) (insert "গ্‌গ"))						
+						)
+					
+					((else if PCID == 53)
+						conditionBlock:
+							((if CID == 2) (delete @-4) (set P2CID CID) (set CID 58) (set SLICER 3) (set ALTERNATE 1) (insert "ঙ্ক্ষ"))
+							((else if CID == 30) (delete @-4) (set P2CID CID) (set CID 58) (set SLICER 1) (insert "ঙ্ক্ষ"))
+							((else if CID == 16) (delete @-4) (set P2CID CID) (set CID 176) (set SLICER 1) (insert "ঙ্‌ক্ত"))
+						)
+					
+					((else if PCID == 60)
+						conditionBlock:
+							((if CID == 23) (delete @-4) (set P2CID CID) (set CID 177) (set SLICER 1) (insert "চ্ছ্ব"))						
+						)
+					
+					((else if PCID == 63)
+						conditionBlock:
+							((if CID == 23) (delete @-4) (set P2CID CID) (set CID 178) (set SLICER 1) (insert "জ্জ্ব"))						
+						)
+					
+					((else if PCID == 84)
+						conditionBlock:
+							((if CID == 23) (delete @-4) (set P2CID CID) (set CID 179) (set SLICER 1) (insert "ত্ত্ব"))						
+						)
+					
+					((else if PCID == 92)
+						conditionBlock:
+							((if CID == 23) (delete @-4) (set P2CID CID) (set CID 180) (set SLICER 1) (insert "দ্দ্ব"))						
+						)
+					
+					((else if PCID == 103)
+						conditionBlock:
+							((if CID == 23) (delete @-4) (set P2CID CID) (set CID 181) (set SLICER 1) (insert "ন্ত্ব"))						
+						)
+					
+					((else if PCID == 105)
+						conditionBlock:
+							((if CID == 23) (delete @-4) (set P2CID CID) (set CID 182) (set SLICER 1) (insert "ন্দ্ব"))						
+						)
+					
+					((else if PCID == 159)
+						conditionBlock:
+							((if CID == 23) (delete @-4) (set P2CID CID) (set CID 183) (set SLICER 1) (insert "স্ত্ব"))						
+						)
+					((else if PCID == 162)
+						conditionBlock:
+							((if CID == 28) (delete @-4) (set P2CID CID) (set CID 184) (set SLICER 1) (insert "স্প্ল"))						
+						)
+					((else if PCID == 110)
+						conditionBlock:
+							((if CID == 11) (delete @-4) (set P2CID CID) (set CID 185) (set SLICER 1) (insert "নস্ট"))						
+						)	
+					((else if PCID == 126)
+						conditionBlock:
+							((if CID == 28) (delete @-4) (set P2CID CID) (set CID 186) (set SLICER 1) (insert "মপ্ল"))						
+						)
+					(else : (set PCID CID) (setNextState ="byanjon-state"))	
+
+			else: { send the raw unmatched input} {setNextState = init}
+
+		if: setNextState is something other than "juktoborno-state" : then, shift to that state.
+		else: stay in juktoborno-state
+
