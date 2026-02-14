@@ -89,7 +89,7 @@ MAPPING DICTIONARIES: {
 		("rff" (set CID 35) "ঢ়")
 		(",," (set CID 36) "়")
 		
-		("kf" (set CID 39) (set SLICER 1) "ক্ষ")
+		("kf" (set CID 39) "ক্ষ")
 		("rr" (set CID 187) "‍রর")		
 	}
 	"""
